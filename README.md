@@ -195,3 +195,69 @@ Extension "node-gamma"  ──┤
 6. Test country selection → verify exit IP matches country
 7. Test split tunnel → bypassed domains should show real IP
 8. Test leaks at https://browserleaks.com/webrtc and https://dnsleaktest.com
+
+## Improvements Roadmap
+
+### Phase 1: MVP Hardening (Before Public Launch)
+
+- **Per-session Tor circuit isolation** — use `IsolateSOCKSAuth` with unique SOCKS5 credentials per user so each client gets independent Tor circuits
+- **Kill switch hardening** — `chrome.declarativeNetRequest` fallback rules to block all traffic if the proxy drops, plus proxy tamper detection to alert users if settings change unexpectedly
+- **Protocol versioning** — include a version field in the WebSocket handshake so relay and extension can negotiate capabilities and maintain backward compatibility
+- **No-log architecture** — ephemeral in-memory-only state, zero disk persistence, no request logging. If the server is seized, there is nothing to hand over
+- **Smart split-tunneling defaults** — ship a curated bypass list for safe high-bandwidth domains (e.g. CDNs, video streaming) that don't benefit from Tor routing
+- **Auto-connect on browser start** — use `chrome.runtime.onStartup` to automatically reconnect to the relay when the browser launches
+- **Connection speed/latency indicator** — show real-time latency and throughput metrics in the popup so users know what to expect
+- **Rate limiting + abuse prevention** — enforce per-user bandwidth caps, block outbound SMTP (port 25) to prevent spam, and limit concurrent connections
+- **Structured JSON logging** — operational-only structured logs (connection counts, error rates, circuit times) with zero identifying information
+- **Relay discovery endpoint** — `/relays` API endpoint returning available relay servers, laying the foundation for multi-relay support
+
+### Phase 2: Growth (First 3 Months)
+
+- **Multi-relay with failover** — deploy 2+ relay servers with DNS round-robin. Extension auto-selects the fastest relay and falls back to alternates on failure
+- **Relay health monitoring + alerting** — integrate Uptime Kuma or webhook-based alerts to detect relay outages and Tor daemon failures in real time
+- **Chrome Web Store optimization** — professional screenshots, keyword-rich description, localized metadata for top 10 languages
+- **Open source launch** — add LICENSE (MIT/GPL), CONTRIBUTING.md, issue templates. Position as "no account required, no data collected, fully transparent"
+- **Privacy audit page** — public page documenting exactly what data is collected (none), the threat model, and a direct link to the source code
+- **Terms of Service + abuse handling** — clear ToS, abuse@ contact, and a documented process for responding to abuse reports
+- **Onboarding flow** — 3-screen intro on first install: what FreeVPN does, automatic leak detection test, and a connection speed test
+- **Donation link** — non-intrusive "Support this project" link via GitHub Sponsors or Ko-fi, shown in the popup footer
+- **Tor circuit path visualization** — show the entry → middle → exit relay path with country flags so users can see where their traffic is routed
+- **Graceful degradation on Tor failure** — detect when the Tor daemon crashes or becomes unresponsive, notify connected clients with a clear error, and auto-restart the daemon
+
+### Phase 3: Expansion (3–6 Months)
+
+- **Firefox extension port** — port to Firefox using WebExtensions API and `browser.proxy.onRequest` for proxy management
+- **Community relay program** — publish a Docker image and relay registration flow so volunteers can run relays. Include a vetting/whitelist process to prevent malicious relays
+- **Built-in privacy leak test** — one-click WebRTC, DNS, and IP leak check directly in the popup, no external sites needed
+- **Caching proxy layer** — LRU cache for static assets at the relay level, bypassing Tor for already-cached resources to improve speed
+- **Bandwidth/usage dashboard** — show bytes up/down and session duration in the popup so users can monitor their usage
+- **Shared protocol package on JSR** — publish the shared types and protocol definitions to JSR so mobile clients can import them directly
+
+### Phase 4: Mobile (6+ Months)
+
+- **Android app** — native app using `VpnService` API for system-wide VPN routing through Tor, reusing the shared protocol package
+- **iOS app** — native app using `NetworkExtension` / `NEPacketTunnelProvider` for system-wide Tor routing
+- **Optional premium tier** — faster non-Tor exit nodes for users willing to pay, funding infrastructure and development
+
+### Key Differentiators
+
+| Feature | FreeVPN | Typical Free VPNs |
+|---|---|---|
+| Account required | No | Yes |
+| Data collection | None | Extensive |
+| Source code | Fully open | Closed |
+| Revenue model | Donations + community | Ads, data sales |
+| Network | Tor (decentralized) | Centralized servers |
+
+### Sustainability
+
+- **Donations** — GitHub Sponsors and Ko-fi for recurring support from users who value privacy
+- **Community relays** — volunteers run relay nodes, distributing infrastructure costs across the community
+- **Minimal infrastructure** — a single $5/mo VPS can serve the MVP. Costs scale gradually with relay count, not user count
+- **No paid staff required** — open source project maintained by contributors, not a company
+
+### Legal Considerations
+
+- **No-log by design** — architecture makes logging impossible, not just a policy promise. In-memory-only state means nothing survives a reboot
+- **Privacy-friendly jurisdiction** — choose a hosting provider in a jurisdiction with strong privacy protections and no mandatory data retention
+- **Abuse handling** — documented abuse@ process, port 25 blocking to prevent spam, and cooperation with law enforcement only when legally compelled with valid jurisdiction
